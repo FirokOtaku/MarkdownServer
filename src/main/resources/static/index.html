@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>Markdown Server</title>
+    <link rel="stylesheet" href="css/font-awesome.css">
+    <link rel="stylesheet" href="css/google-css-raleway.css">
+    <link rel="stylesheet" href="css/templated.css" />
+    <link rel="stylesheet" href="css/highlight.css">
+
+    <script src="highlight.js"></script>
+    <script src="qs.js"></script>
+    <script src="axios.js"></script>
+    <script src="marked.js"></script>
+    <script src="vue.js"></script>
+    <script src="vue-router.js"></script>
+    <style>
+        body
+        {
+            background-color: white;
+            font-size: 16px;
+            background-image: url("images/overlay.png");
+
+            padding: 24px;
+            font-family: 'JetBrains Mono','Consolas','Microsoft Yahei';
+            width: 100%;
+            height: 100%;
+        }
+        div
+        {
+            height: 100%;
+        }
+        textarea
+        {
+            height: 100%;
+        }
+
+        .ul-file-tree li
+        {
+            list-style-type: none;
+            position: relative;
+            left: -12px;
+        }
+        .ul-file-tree li:before
+        {
+            content: "╰"
+        }
+
+        hr
+        {
+            margin: 0;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div id="app" class="content">
+    <div class="row"
+    >
+        <!-- 文件目录 -->
+        <div class="col-3 col-12-small"
+             style="border:1px lightgray solid">
+            <div>
+                <span>
+                    <span class="fa icon fa-folder-open-o"></span>/<span v-if="dir && dir.paths && dir.paths.length" v-for="p in dir.paths">{{p}}/</span>
+                </span>
+            </div>
+
+            <div>
+                <ul class="ul-file-tree">
+                    <li v-if="dir.paths && dir.paths.length"
+                        @click="clickParentDir">
+                        <span class="fa icon fa-long-arrow-left"></span> 返回上级
+                    </li>
+                    <li v-for="childDir in dir.childrenDir"
+                        @click="clickChildDir(childDir)">
+                        <span class="fa icon fa-folder-o"></span> {{childDir}}
+                    </li>
+                    <li v-for="childFile in dir.childrenFile"
+                        @click="clickFile(childFile)">
+                        <span class="fa icon fa-file-text-o"></span> {{childFile}}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 文件内容 -->
+        <div class="col-9 col-12-small"
+             style="height:100%">
+
+            <div class="row">
+                <span class="col-12 col-12-small">
+                    <h2>
+                        /<span v-for="p in file.paths">{{p}}/</span><b>{{file.name}}</b> <span v-if="file.changed" title="存在未上传的改动">*</span>
+                    </h2>
+                </span>
+<!--                <span class="col-6 col-12-small" style="font-size: 22px">-->
+<!--                    <span class="fa icon fa-eye"-->
+<!--                          @click="changeMethod('view')"-->
+<!--                          :style="{ color: viewMethod === 'view' ? 'red':'' }"-->
+<!--                          title="查看模式"></span> |-->
+<!--                    <span class="fa icon fa fa-navicon"-->
+<!--                          @click="changeMethod('both')"-->
+<!--                          :style="{ color: viewMethod === 'both' ? 'red':'' }"-->
+<!--                          title="对照模式"></span> |-->
+<!--                    <span class="fa icon fa-pencil"-->
+<!--                          @click="changeMethod('edit')"-->
+<!--                          :style="{ color: viewMethod === 'edit' ? 'red':'' }"-->
+<!--                          title="编辑模式"></span> |-->
+<!--                    <span class="fa icon fa-save"-->
+<!--                          @click="syncFile"-->
+<!--                          :style="{ color: file.changed? 'green':'lightgray' }" title="上传改动到服务器"></span> |-->
+<!--                    <span class="fa icon fa-trash-o"-->
+<!--                          style="color:orange"-->
+<!--                          title="删除"></span> |-->
+<!--                    <span class="fa icon fa-copy"-->
+<!--                          style="color:darkgreen"-->
+<!--                          title="复制文档原文"></span> |-->
+<!--                    <span class="fa icon fa-share-alt"-->
+<!--                          style="color:darkblue"-->
+<!--                          title="复制文档链接"></span>-->
+<!--                </span>-->
+            </div>
+
+            <hr>
+
+            <div style="display: flex">
+                <textarea style="width:100%;overflow: auto;word-break: break-all;height:100%"
+                          cols="10"
+                          rows="20"
+                          v-model="file.content"
+                          id="2"
+                          @change="file.changed = true"
+
+                          v-if="viewMethod !== 'view'"
+                          style="display: inline"
+                          :style="{width: viewMethod === 'edit'? '100%': '50%' }"
+                ></textarea>
+
+                <div v-if="viewMethod !== 'edit'"
+                     style="display: inline"
+                     :style="{width: viewMethod === 'view'? '100%': '50%' }"
+                >
+                    <div v-if="file.content" v-html="htmlContent" style="width:100%;"></div>
+                </div>
+            </div>
+
+
+<!--            <table style="width:100%;height:100%;background:white;">-->
+<!--                <tr style="width:100%">-->
+<!--                    <td v-if="viewMethod !== 'view'"-->
+<!--                        style="width: 100%;"-->
+<!--                    >-->
+<!--                        <textarea style="width:100%;word-break: break-all"-->
+<!--                                  cols="50"-->
+<!--                                  rows="50"-->
+<!--                                  v-model="file.content"-->
+<!--                                  id="2"-->
+<!--                                  @change="file.changed = true"-->
+<!--                        ></textarea>-->
+<!--                    </td>-->
+
+<!--                    <td v-if="viewMethod !== 'edit'"-->
+<!--                        style="100%"-->
+<!--                    >-->
+<!--                        <div v-if="file.content" v-html="htmlContent"></div>-->
+<!--                    </td>-->
+<!--                </tr>-->
+<!--            </table>-->
+        </div>
+
+    </div>
+</div>
+
+</body>
+<script src="index.js"></script>
+</html>

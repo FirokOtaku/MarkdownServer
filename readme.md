@@ -21,7 +21,7 @@
 
 ### 如何使用
 
-调整`cmds.jar/BOOT-INF/classes/application.properties`配置文件中的`app.basePath`键即可更改管理的文档文件夹.
+调整`mds.jar/BOOT-INF/classes/application.properties`配置文件中的`app.basePath`键即可更改管理的文档文件夹.
 
 使用`java -jar docs.jar`启动服务器应用.
 

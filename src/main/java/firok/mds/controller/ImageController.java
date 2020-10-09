@@ -1,4 +1,4 @@
-package firok.docs;
+package firok.mds.controller;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -11,7 +11,6 @@ import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api/img")
-@CrossOrigin
 public class ImageController
 {
 	@Value("${app.basePath}")

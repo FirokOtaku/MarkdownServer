@@ -1,4 +1,4 @@
-package firok.docs.entity;
+package firok.mds.entity;
 
 import lombok.Data;
 

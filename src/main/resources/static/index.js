@@ -97,7 +97,7 @@ const appIndexMd =
 `
 # Markdown 文档服务器
 
-v0.2.0 by Firok
+v0.3.0 by Firok
 
 [项目GitHub地址](https://github.com/351768593/MarkdownServer)
 
@@ -306,6 +306,7 @@ const app = new Vue({
                     this.file.paths = pf;
                     this.file.name = f;
                     this.file.content = response.data;
+                    this.file.changed = false;
                     // this.logMsg('信息','成功',true,2000);
                 })
                 .catch((error)=>{

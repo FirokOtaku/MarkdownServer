@@ -130,6 +130,7 @@
         <span class="fa icon fa-sitemap"
               :style="{ color: choose(windowMethod, { both: 'red', file: 'gray' }) }"
               @click="windowMethod = choose(windowMethod,{ both: 'file', file: 'both' })"
+              title="显示目录栏"
         ></span> |
 
 
@@ -152,7 +153,7 @@
         <span class="fa icon fa-trash-o"
               @click="deleteFile"
               :style="{ color: file.paths.length!=0 || (file.name !='' && file.name != undefined) ? 'orange': 'lightgray' }"
-              title="删除"></span> |
+              title="删除当前文件"></span> |
 <!--        <span class="fa icon fa-copy"-->
 <!--              st yle="color:darkgreen"-->
 <!--              title="复制文档原文"></span> |-->

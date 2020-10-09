@@ -1,22 +1,19 @@
-package firok.docs;
+package firok.mds.controller;
 
-import firok.docs.entity.EntityDir;
-import firok.docs.entity.EntityDoc;
-import firok.docs.entity.Response;
+import firok.mds.entity.EntityDir;
+import firok.mds.entity.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 @RestController
 @RequestMapping("/api/dir")
-@CrossOrigin
 public class DirController
 {
 	@Value("${app.basePath}")

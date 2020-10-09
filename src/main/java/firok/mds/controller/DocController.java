@@ -1,7 +1,7 @@
-package firok.docs;
+package firok.mds.controller;
 
-import firok.docs.entity.EntityDoc;
-import firok.docs.entity.Response;
+import firok.mds.entity.EntityDoc;
+import firok.mds.entity.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +14,6 @@ import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api/doc")
-@CrossOrigin
 public class DocController
 {
 	@Value("${app.basePath}")

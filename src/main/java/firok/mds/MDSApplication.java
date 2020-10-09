@@ -1,15 +1,15 @@
-package firok.docs;
+package firok.mds;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class DocsApplication
+public class MDSApplication
 {
 
 	public static void main(String[] args)
 	{
-		SpringApplication.run(DocsApplication.class, args);
+		SpringApplication.run(MDSApplication.class, args);
 	}
 
 }

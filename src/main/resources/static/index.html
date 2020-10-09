@@ -21,18 +21,11 @@
             font-size: 16px;
             background-image: url("images/overlay.png");
 
-            padding: 24px;
             font-family: 'JetBrains Mono','Consolas','Microsoft Yahei';
             width: 100%;
             height: 100%;
-        }
-        div
-        {
-            height: 100%;
-        }
-        textarea
-        {
-            height: 100%;
+
+            overflow: hidden;
         }
 
         .ul-file-tree li
@@ -50,18 +43,144 @@
         {
             margin: 0;
         }
+        .w10 { width: 10% }
+        .w20 { width: 20% }
+        .w30 { width: 30% }
+        .w40 { width: 40% }
+        .w50 { width: 50% }
+        .w60 { width: 60% }
+        .w70 { width: 70% }
+        .w80 { width: 80% }
+        .w90 { width: 90% }
+        .w100 { width: 100% }
+        .h10 { height: 10% }
+        .h20 { height: 20% }
+        .h30 { height: 30% }
+        .h40 { height: 40% }
+        .h50 { height: 50% }
+        .h60 { height: 60% }
+        .h70 { height: 70% }
+        .h80 { height: 80% }
+        .h90 { height: 90% }
+        .h100 { height: 100% }
+        .hidden { display: none }
+        .usn { user-select: none }
 
+        #app
+        {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #bar
+        {
+            overflow: hidden;
+            height: 24px;
+        }
+        #body
+        {
+            width: 100%;
+            height: 100%;
+            display: flex;
+
+            position: absolute;
+            top: 26px;
+
+            padding: 0 0 26px 0;
+        }
+
+
+        #file-tree
+        {
+            height: 100%;
+        }
+        #file-content
+        {
+            height: 100%;
+            padding: 0 0 0 6px;
+            overscroll-behavior-x: none;
+        }
+
+        #logs
+        {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            min-height: 40px;
+        }
+        .log-box
+        {
+            margin: 4px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #999999;
+            padding: 8px;
+        }
 
     </style>
 </head>
 <body>
 
-<div id="app" class="content">
-    <div class="row"
-    >
-        <!-- 文件目录 -->
-        <div class="col-3 col-12-small"
-             style="border:1px lightgray solid">
+<div id="app">
+
+    <div id="bar" class="usn">
+        <span class="fa icon fa-sitemap"
+              :style="{ color: choose(windowMethod, { both: 'red', file: 'gray' }) }"
+              @click="windowMethod = choose(windowMethod,{ both: 'file', file: 'both' })"
+        ></span> |
+
+
+        <span class="fa icon fa-pencil"
+              @click="changeMethod('edit')"
+              :style="{ color: viewMethod === 'edit' ? 'lightblue':'' }"
+              title="编辑模式"></span> |
+        <span class="fa icon fa fa-navicon"
+              @click="changeMethod('both')"
+              :style="{ color: viewMethod === 'both' ? 'lightblue':'' }"
+              title="对照模式"></span> |
+        <span class="fa icon fa-eye"
+              @click="changeMethod('view')"
+              :style="{ color: viewMethod === 'view' ? 'lightblue':'' }"
+              title="查看模式"></span> |
+
+        <span class="fa icon fa-save"
+              @click="syncFile"
+              :style="{ color: file.changed? 'green':'lightgray' }" title="上传改动到服务器"></span> |
+        <span class="fa icon fa-trash-o"
+              @click="deleteFile"
+              :style="{ color: file.paths.length!=0 || (file.name !='' && file.name != undefined) ? 'orange': 'lightgray' }"
+              title="删除"></span> |
+<!--        <span class="fa icon fa-copy"-->
+<!--              st yle="color:darkgreen"-->
+<!--              title="复制文档原文"></span> |-->
+<!--        <span class="fa icon fa-share-alt"-->
+<!--              style="color:darkblue"-->
+<!--              title="复制文档链接"></span> |-->
+
+        <span>
+            /<span v-for="p in file.paths">{{p}}/</span><b>{{file.name}}</b> <span v-if="file.changed" title="存在未上传的改动">*</span>
+        </span>
+
+<!--        <button class="button small" @click="windowMethod='both'" title="">-->
+<!--            <span class="fa icon fa-exchange"></span>-->
+<!--        </button>-->
+
+<!--        <button class="button small" @click="windowMethod='file'">-->
+<!--            <span class="fa icon fa-search"></span>-->
+<!--        </button>-->
+    </div>
+
+    <hr>
+
+    <div id="body">
+        <div id="file-tree"
+             v-if="windowMethod !== 'file'"
+             :style="styleFileTree"
+             class="usn"
+        >
             <div>
                 <span>
                     <span class="fa icon fa-folder-open-o"></span>/<span v-if="dir && dir.paths && dir.paths.length" v-for="p in dir.paths">{{p}}/</span>
@@ -70,6 +189,12 @@
 
             <div>
                 <ul class="ul-file-tree">
+                    <li @click="clickCreateDir">
+                        <span class="fa icon fa-plus"></span> 新建文件夹
+                    </li>
+                    <li @click="clickCreateFile">
+                        <span class="fa icon fa-plus"></span> 新建文件
+                    </li>
                     <li v-if="dir.paths && dir.paths.length"
                         @click="clickParentDir">
                         <span class="fa icon fa-long-arrow-left"></span> 返回上级
@@ -86,92 +211,40 @@
             </div>
         </div>
 
-        <!-- 文件内容 -->
-        <div class="col-9 col-12-small"
-             style="height:100%">
+        <div id="file-content"
+             v-if="windowMethod !== 'tree'"
+             :style="styleFileContent"
+        >
 
-            <div class="row">
-                <span class="col-12 col-12-small">
-                    <h2>
-                        /<span v-for="p in file.paths">{{p}}/</span><b>{{file.name}}</b> <span v-if="file.changed" title="存在未上传的改动">*</span>
-                    </h2>
-                </span>
-<!--                <span class="col-6 col-12-small" style="font-size: 22px">-->
-<!--                    <span class="fa icon fa-eye"-->
-<!--                          @click="changeMethod('view')"-->
-<!--                          :style="{ color: viewMethod === 'view' ? 'red':'' }"-->
-<!--                          title="查看模式"></span> |-->
-<!--                    <span class="fa icon fa fa-navicon"-->
-<!--                          @click="changeMethod('both')"-->
-<!--                          :style="{ color: viewMethod === 'both' ? 'red':'' }"-->
-<!--                          title="对照模式"></span> |-->
-<!--                    <span class="fa icon fa-pencil"-->
-<!--                          @click="changeMethod('edit')"-->
-<!--                          :style="{ color: viewMethod === 'edit' ? 'red':'' }"-->
-<!--                          title="编辑模式"></span> |-->
-<!--                    <span class="fa icon fa-save"-->
-<!--                          @click="syncFile"-->
-<!--                          :style="{ color: file.changed? 'green':'lightgray' }" title="上传改动到服务器"></span> |-->
-<!--                    <span class="fa icon fa-trash-o"-->
-<!--                          style="color:orange"-->
-<!--                          title="删除"></span> |-->
-<!--                    <span class="fa icon fa-copy"-->
-<!--                          style="color:darkgreen"-->
-<!--                          title="复制文档原文"></span> |-->
-<!--                    <span class="fa icon fa-share-alt"-->
-<!--                          style="color:darkblue"-->
-<!--                          title="复制文档链接"></span>-->
-<!--                </span>-->
+            <textarea v-model="file.content"
+                      @change="file.changed = true"
+
+                      v-if="viewMethod !== 'view'"
+                      :style="styleFileContentEditor"
+            ></textarea>
+
+            <div v-if="viewMethod !== 'edit'"
+                 :style="styleFileContentViewer"
+            >
+                <div v-if="file.content" v-html="htmlContent" style="width:100%;"></div>
             </div>
-
-            <hr>
-
-            <div style="display: flex">
-                <textarea style="width:100%;overflow: auto;word-break: break-all;height:100%"
-                          cols="10"
-                          rows="20"
-                          v-model="file.content"
-                          id="2"
-                          @change="file.changed = true"
-
-                          v-if="viewMethod !== 'view'"
-                          style="display: inline"
-                          :style="{width: viewMethod === 'edit'? '100%': '50%' }"
-                ></textarea>
-
-                <div v-if="viewMethod !== 'edit'"
-                     style="display: inline"
-                     :style="{width: viewMethod === 'view'? '100%': '50%' }"
-                >
-                    <div v-if="file.content" v-html="htmlContent" style="width:100%;"></div>
-                </div>
-            </div>
-
-
-<!--            <table style="width:100%;height:100%;background:white;">-->
-<!--                <tr style="width:100%">-->
-<!--                    <td v-if="viewMethod !== 'view'"-->
-<!--                        style="width: 100%;"-->
-<!--                    >-->
-<!--                        <textarea style="width:100%;word-break: break-all"-->
-<!--                                  cols="50"-->
-<!--                                  rows="50"-->
-<!--                                  v-model="file.content"-->
-<!--                                  id="2"-->
-<!--                                  @change="file.changed = true"-->
-<!--                        ></textarea>-->
-<!--                    </td>-->
-
-<!--                    <td v-if="viewMethod !== 'edit'"-->
-<!--                        style="100%"-->
-<!--                    >-->
-<!--                        <div v-if="file.content" v-html="htmlContent"></div>-->
-<!--                    </td>-->
-<!--                </tr>-->
-<!--            </table>-->
         </div>
-
     </div>
+
+    <div id="logs">
+        <div class="log-box" v-for="log in logs">
+            <div style="font-size:20px;">
+                <b :style="{color: log.titleColor}">{{log.title}}</b>
+                <span class="fa icon fa-close"
+                      style="color:#ff3939;float:right;font-size:150%"
+                      v-if="log.closable"
+                      @click="closeLogById(log.id)"
+                ></span>
+            </div>
+            <div v-html="log.bodyHtml"></div>
+        </div>
+    </div>
+
 </div>
 
 </body>

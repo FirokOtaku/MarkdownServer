@@ -7,7 +7,8 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.*;
+import java.io.File;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -127,14 +128,18 @@ public class DocController
 	 * 删除指定路径文档信息
 	 * @return 信息
 	 */
-	@GetMapping("/delete")
+	@PostMapping("/delete")
 	public Response<?> delete(
-			@RequestParam(name="path") String path
+			@RequestBody EntityDoc doc
 	)
 	{
 		try
 		{
-			File file = new File(basePath, path);
+			String[] paths = doc.getPaths()!=null?doc.getPaths() : new String[0];
+			Path path = Paths.get(basePath, paths);
+
+			File file = new File(path.toFile(), doc.getFile());
+
 			return file.exists() && file.isFile() && file.delete() ?
 					Response.success():
 					Response.fail();

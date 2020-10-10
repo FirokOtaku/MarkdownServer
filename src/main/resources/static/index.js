@@ -1,20 +1,5 @@
 const {log} = console;
 
-Vue.component('button-counter', {
-    data: function () {
-        return {
-            count: 0
-        }
-    },
-    template:
-`
-<button v-on:click="count++">
-You clicked me {{ count }} times.
-</button>
-`
-});
-
-
 Vue.component('md-viewer',{
     props: ['md'],
     computed: {
@@ -58,15 +43,7 @@ Vue.component('md-editor',{
 `
 })
 
-// Vue Router 组件路由
-// const MdViewer = Vue.component('md-viewer');
-// const MdEditor = Vue.component('md-editor');
-
-const routes = [
-    // { path: '/view', component: MdViewer },
-    // { path: '/edit', component: MdEditor },
-]
-const router = new VueRouter({ routes });
+const router = new VueRouter({ routes: [] });
 
 // 调整marked图片渲染器
 marked.Renderer.prototype.image = (href,title,text)=>{
@@ -93,16 +70,19 @@ marked.Renderer.prototype.image = (href,title,text)=>{
 marked.setOptions({
     highlight: (code)=>hljs.highlightAuto(code).value,
 });
+
+// todo 这个首页msg估计以后要换成动态从后台获取
 const appIndexMd =
 `
 # Markdown 文档服务器
 
-v0.3.0 by Firok
+v0.4.0 by Firok
 
 [项目GitHub地址](https://github.com/351768593/MarkdownServer)
 
 `;
 
+// 生成随机uuid
 function uuid()
 {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
@@ -122,18 +102,18 @@ const app = new Vue({
             paths: [],
             childrenDir: [],
             childrenFile: [],
-        },
+        }, // 文件夹数据
         file: {
             paths: [],
             name: undefined,
             content: appIndexMd,
             changed: false,
             method: 'view',
-        },
+        }, // 文件数据
 
-        logs: [],
+        logs: [], // 屏幕日志列表
 
-        windowMethod: 'both'
+        windowMethod: 'both', // 文件树显示状态
     },
     methods: {
         clickParentDir: function() {
@@ -198,6 +178,7 @@ const app = new Vue({
             }
         },
 
+        // 工具方法 - 键值选择
         choose: function(key,obj={}){
             return obj[key];
         },
@@ -206,50 +187,58 @@ const app = new Vue({
         {
             if(!this.file.changed) return; // 没有改动直接返回
 
-            axios.post('/api/doc/write',{
-                paths: this.dir.paths,
-                file: this.file.name,
-                data: this.file.content,
-            })
-            .then((response)=>{
-                this.logMsg('信息','上传成功',true,2000);
-                this.file.changed = false;
-            })
-            .catch((error)=>{
-                this.logError('错误','上传文件时发生错误:'+error,true,3500);
-            });
+            this.nPost(
+                '/api/doc/write',
+                {
+                    paths: this.dir.paths,
+                    file: this.file.name,
+                    data: this.file.content,
+                },
+                (response)=>{
+                    this.logMsg('信息','上传成功',true,2000);
+                    this.file.changed = false;
+                },
+                (error)=>{
+                    this.logError('错误','上传文件时发生错误:'+error,true,3500);Z
+                }
+            );
         },
         deleteFile: function() // 删除当前文件
         {
-            if(this.file.paths.length<=0 || this.file.name==undefined || this.file.name=='') return;
+            if(this.file.name==undefined || this.file.name=='') return;
 
             const result = window.confirm('删除此文档?');
             if(!result) return;
 
-            axios.post('/api/doc/delete',{
-                paths: this.file.paths,
-                file: this.file.name,
-            })
-            .then((response)=>{
-                this.logMsg('信息','删除成功',true,2000);
-                this.file.changed = false;
-                this.file.paths = [];
-                this.file.method = 'view';
-                this.file.name = '';
-                this.file.content = appIndexMd;
-                this.pushPath(this.dir.paths,this.file.paths,'');
-                this.flushPath();
-            })
-            .catch((error)=>{
-                this.logError('错误','删除文件时发生错误:'+error,true,3500);
-            });
+            this.nPost(
+                '/api/doc/delete',
+                {
+                    paths: this.file.paths,
+                    file: this.file.name,
+                },
+                (response)=>{
+                    this.logMsg('信息','删除成功',true,2000);
+                    this.file.changed = false;
+                    this.file.paths = [];
+                    this.file.method = 'view';
+                    this.file.name = '';
+                    this.file.content = appIndexMd;
+                    this.pushPath(this.dir.paths,this.file.paths,'');
+                    this.flushPath();
+                },
+                (error)=>{
+                    this.logError('错误','删除文件时发生错误:'+error,true,3500);
+                }
+            )
         },
 
+        // 切换文件查看模式
         changeMethod: function(method='view')
         {
             this.file.method = method;
         },
 
+        // 切换路径
         pushPath: function(pd=[],pf=[],file='')
         {
             // log('请求');
@@ -267,29 +256,36 @@ const app = new Vue({
             this.$router.push(query);
         },
 
+        // 仅根据路径更新目录内容
         flushDir: function(pd){
             // log('flush dir')
             // log(pd);
 
             // 刷新目录数据
-            axios.post('/api/dir/list',{
-                'paths': pd,
-            })
-            .then((response)=>{
-                this.dir = response.data.data;
-                if(this.dir.paths==null) this.dir.paths=[];
-                if(this.dir.childrenDir==null) this.dir.childrenDir=[];
-                if(this.dir.childrenFile==null) this.dir.childrenFile=[];
-            })
-            .catch((error)=>{
-                this.logError('错误','请求文件夹数据时发生错误:'+error,true,3500);
-            });
+            this.nPost(
+                '/api/dir/list',
+                { 'paths': pd, },
+                (data)=>{
+                    // log('data');
+                    // log(data);
+                    this.dir = data.data;
+                    if(this.dir.paths==null) this.dir.paths=[];
+                    if(this.dir.childrenDir==null) this.dir.childrenDir=[];
+                    if(this.dir.childrenFile==null) this.dir.childrenFile=[];
+                },
+                (error)=>{
+                    this.logError('错误','请求文件夹数据时发生错误:'+error,true,3500);
+                }
+            );
         },
+        // 仅根据路径更新文件内容
         flushFile: function(pf,f){
             // log('flush file');
             // log(pf);
             // log(f);
             // 刷新文件数据
+
+            // info 因为文件内容这个接口返回格式跟其它接口不一样 只能直接调用axios手动处理数据
             if(pf!=undefined && f!=undefined && f!='')
             {
                 axios.get('/api/doc/file',{
@@ -315,13 +311,15 @@ const app = new Vue({
             }
         },
 
-        flushPath: function () // 自动根据当前的path数据更新所有界面数据
+        // 自动根据当前的path数据更新所有界面数据
+        flushPath: function ()
         {
             const path = this.path;
             this.flushDir(path.pd);
             this.flushFile(path.pf,path.f);
         },
 
+        // 增加一条log信息
         logInner: function (title='信息', bodyHtml='', titleColor='#555555', closable=true, autoClose=-1)
         {
             const idNew = uuid();
@@ -335,6 +333,7 @@ const app = new Vue({
             };
             this.logs.push(logNew);
         },
+        // 删除已经打开的log信息
         closeLogById: function(id)
         {
             for(let i=0;i<this.logs.length;i++)
@@ -347,11 +346,45 @@ const app = new Vue({
             return null;
         },
 
+        // 增加一条错误log信息
         logError: function (title,msg,closable=true,autoClose=undefined) {
             this.logInner(title,msg,'#900',closable,autoClose);
         },
+        // 增加一条提示log信息
         logMsg: function (title,msg,closable=true,autoClose=undefined) {
             this.logInner(title,msg,'#555',closable,autoClose);
+        },
+
+        // 网络请求封装方法 - get
+        nGet: function(url,params=undefined,onSuccess=()=>{},onError=undefined)
+        {
+            axios.get(url,{
+                'params': params,
+                'paramsSerializer': pa => Qs.stringify(pa, { indices: false } ),
+            })
+                .then((response)=>{
+                    const data = response.data;
+                    if(data.success) onSuccess(data);
+                    else throw data.msg;
+                })
+                .catch((error)=>{
+                    if(onError) onError(error);
+                    else this.logError('错误',error,true,3500);
+                });
+        },
+        // 网络请求封装方法 - post
+        nPost: function(url,params=undefined,onSuccess=()=>{},onError=undefined)
+        {
+            axios.post(url,params)
+                .then((response)=>{
+                    const data = response.data;
+                    if(data.success) onSuccess(data);
+                    else throw data.msg;
+                })
+                .catch((error)=>{
+                    if(onError) onError(error);
+                    else this.logError('错误',error,true,3500);
+                });
         }
     },
     computed: {
@@ -464,6 +497,7 @@ const app = new Vue({
     },
 });
 
+// todo 以后可能要在路由切换之前先获取数据 成功之后再push进去 否则取消push事件
 router.afterEach((t, f) => {
     t=t.query;
     f=f.query;

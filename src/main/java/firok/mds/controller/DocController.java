@@ -2,15 +2,21 @@ package firok.mds.controller;
 
 import firok.mds.entity.EntityDoc;
 import firok.mds.entity.Response;
+import firok.mds.service.LogService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+
+import static firok.mds.MDSApplication.getSuccessString;
 
 @RestController
 @RequestMapping("/api/doc")
@@ -18,6 +24,12 @@ public class DocController
 {
 	@Value("${app.basePath}")
 	String basePath;
+
+	@Autowired
+	public LogService logService;
+
+	@Autowired
+	public HttpServletRequest request;
 
 //	/**
 //	 * 读取指定文档信息
@@ -63,6 +75,8 @@ public class DocController
 		if(paths==null) paths = new String[0];
 		Path path = Paths.get(basePath, paths);
 
+		logService.info("读取文件 [",Arrays.toString(paths),",",fileName,"] |",request.getRemoteAddr());
+
 		File file = new File(path.toFile(), fileName);
 		if (file.exists())
 		{
@@ -101,25 +115,33 @@ public class DocController
 			@RequestBody EntityDoc doc
 	)
 	{
+		boolean success = false;
+		String[] paths = null;
 		try
 		{
-			String[] paths = doc.getPaths()!=null?doc.getPaths() : new String[0];
+			paths = doc.getPaths()!=null?doc.getPaths() : new String[0];
 			Path path = Paths.get(basePath, paths);
 
 			File file = new File(path.toFile(), doc.getFile());
 			File fileParent = file.getParentFile();
 			if(!fileParent.exists() || !fileParent.isDirectory()) fileParent.mkdirs();
 
-			try(PrintStream out = new PrintStream(file))
+			try(PrintStream out = new PrintStream(file,"utf8"))
 			{
 				out.println(doc.getData());
 			}
 
+			success = true;
 			return Response.success();
 		}
 		catch (Exception e)
 		{
+			success = false;
 			return Response.fail(e);
+		}
+		finally
+		{
+			logService.info("写入文件 [",Arrays.toString(paths),",",doc.getFile(),"] ",getSuccessString(success)," | ",request.getRemoteAddr());
 		}
 	}
 
@@ -132,20 +154,27 @@ public class DocController
 			@RequestBody EntityDoc doc
 	)
 	{
+		boolean success = false;
+		String[] paths = null;
 		try
 		{
-			String[] paths = doc.getPaths()!=null?doc.getPaths() : new String[0];
+			paths = doc.getPaths()!=null?doc.getPaths() : new String[0];
 			Path path = Paths.get(basePath, paths);
 
 			File file = new File(path.toFile(), doc.getFile());
 
-			return file.exists() && file.isFile() && file.delete() ?
-					Response.success():
-					Response.fail();
+			success = file.exists() && file.isFile() && file.delete();
+
+			return success ? Response.success() : Response.fail();
 		}
 		catch (Exception e)
 		{
+			success = false;
 			return Response.fail(e);
+		}
+		finally
+		{
+			logService.info("删除文件 [",Arrays.toString(paths),",",doc.getFile(),"] ",getSuccessString(success)," | ",request.getRemoteAddr());
 		}
 	}
 

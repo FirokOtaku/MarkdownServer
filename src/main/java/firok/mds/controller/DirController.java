@@ -2,9 +2,15 @@ package firok.mds.controller;
 
 import firok.mds.entity.EntityDir;
 import firok.mds.entity.Response;
+import firok.mds.service.LogService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,12 +18,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static firok.mds.MDSApplication.getSuccessString;
+
 @RestController
 @RequestMapping("/api/dir")
 public class DirController
 {
 	@Value("${app.basePath}")
 	String basePath;
+
+	@Autowired
+	public HttpServletRequest request;
+
+	@Autowired
+	public LogService logService;
 
 	/**
 	 * 获取指定路径的子目录和文件信息
@@ -54,6 +68,8 @@ public class DirController
 			}
 		}
 
+		logService.info("读取文件夹 [",dir!=null&&dir.getPaths()!=null?Arrays.toString(dir.getPaths()):"/","] |",request.getRemoteAddr());
+
 		return Response.success(ret);
 	}
 
@@ -67,15 +83,23 @@ public class DirController
 			@RequestBody EntityDir dir
 	)
 	{
+		boolean success = false;
 		try
 		{
 			Path path = Paths.get(basePath,dir.getPaths());
 			File file = path.toFile();
-			return (!file.exists() || !file.isDirectory()) && file.mkdirs() ? Response.success(): Response.fail();
+
+			success = (!file.exists() || !file.isDirectory()) && file.mkdirs();
+
+			return success ? Response.success(): Response.fail();
 		}
 		catch (Exception e)
 		{
 			return Response.fail(e);
+		}
+		finally
+		{
+			logService.info("创建文件夹 [",Arrays.toString(dir.getPaths()),"] ",getSuccessString(success)," |",request.getRemoteAddr());
 		}
 	}
 
@@ -89,32 +113,23 @@ public class DirController
 			@RequestBody EntityDir dir
 	)
 	{
+		boolean success = false;
 		try
 		{
 			Path path = Paths.get(basePath, dir.getPaths());
 			File file = path.toFile();
-			return file.exists() && file.isDirectory() && file.delete() ? Response.success() : Response.fail();
+
+			success = file.exists() && file.isDirectory() && file.delete();
+
+			return success ? Response.success() : Response.fail();
 		}
 		catch (Exception e)
 		{
 			return Response.fail(e);
 		}
-	}
-
-
-	@GetMapping("/test")
-	public Response<?> test(
-			@RequestParam(name="paths",required=false)String[] paths
-	)
-	{
-		System.out.println(Arrays.toString(paths));
-		return Response.success(paths);
-	}
-
-	public static void main(String[] args) {
-		Path pathAbsolute = Paths.get("base/d1");
-		Path pathBase = Paths.get("base/d2");
-		Path pathRelative = pathBase.relativize(pathAbsolute);
-		System.out.println(pathRelative);
+		finally
+		{
+			logService.info("创建文件夹 [",Arrays.toString(dir.getPaths()),"] ",getSuccessString(success)," |",request.getRemoteAddr());
+		}
 	}
 }

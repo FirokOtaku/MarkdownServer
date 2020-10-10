@@ -159,7 +159,7 @@ const app = new Vue({
             if(name!==null)
             {
                 let pathsTemp = [];
-                for(let p of this.path.paths)
+                for(let p of this.path.pd)
                 {
                     pathsTemp.push(p);
                 }
@@ -169,8 +169,8 @@ const app = new Vue({
                 })
                 .then((response)=>{
                     this.logMsg('信息','创建文件夹成功',true,2000);
-                    this.dir.paths = pathsTemp;
-                    this.flushDir(pathsTemp);
+                    // this.dir.paths = pathsTemp;
+                    this.flushDir(this.path.pd);
                 })
                 .catch((error)=>{
                     this.logError('错误','创建文件夹失败:'+error,true,3500);

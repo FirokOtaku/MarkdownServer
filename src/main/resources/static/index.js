@@ -45,6 +45,25 @@ Vue.component('md-editor',{
 
 Vue.prototype.Clipboard = ClipboardJS;
 
+function getFileLengthString(length=0)
+{
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const step= 1024;
+    function format(value, power) {
+        return (value / Math.pow(step, power)).toFixed(2) + units[power];
+    }
+
+    for (let i = 0; i < units.length; i++) {
+        if (length < Math.pow(step, i)) {
+            if (units[i - 1]) {
+                return format(length, i - 1);
+            }
+            return length + units[i];
+        }
+    }
+    return format(value, i - 1);
+}
+
 const router = new VueRouter({ routes: [] });
 
 // 调整marked图片渲染器
@@ -78,7 +97,7 @@ const appIndexMd =
 `
 # Markdown 文档服务器
 
-v0.4.0 by Firok
+v0.6.0 by Firok
 
 [项目GitHub地址](https://github.com/351768593/MarkdownServer)
 
@@ -142,6 +161,59 @@ const app = new Vue({
             clipboard.on('error', ()=>{
                 this.logError('错误','复制失败',true,3500);
             });
+        },
+        clickFilePath: function(index)
+        {
+            let pathsNew = [];
+            for(let i=0;i<=index;i++) pathsNew.push(this.file.paths[i]);
+            // log(pathsNew);
+            this.pushPath(pathsNew,this.file.paths,this.file.name);
+        },
+        clickFileInfo: function()
+        {
+            this.nPost(
+                '/api/doc/info',
+                {
+                    paths: this.file.paths,
+                    file: this.file.name,
+                },
+                (data)=>{
+
+                    let ct = new Date(data.data.updateTime);
+                    let length = data.data.length;
+
+                    let week;
+                    switch(ct.getDay())
+                    {
+                        case 1: week = '周一'; break;
+                        case 2: week = '周二'; break;
+                        case 3: week = '周三'; break;
+                        case 4: week = '周四'; break;
+                        case 5: week = '周五'; break;
+                        case 6: week = '周六'; break;
+                        case 7: week = '周日'; break;
+                        default: week = '-'; break;
+                    }
+                    let cts = `${ct.getUTCFullYear()}-${ct.getUTCMonth()+1}-${ct.getUTCMonth()}(${week}) ${ct.getHours()}:${ct.getMinutes()}:${ct.getSeconds()}`;
+
+                    this.logInner('文件信息',
+`<div>
+<table>
+<tr>
+    <td>最后更新于</td>
+    <td>${cts}</td>
+</tr>
+<tr>
+    <td>文件大小</td>
+    <td>${getFileLengthString(length)}</td>
+</tr>
+</table>
+</div>`,'#555555',true);
+                },
+                (error)=>{
+                    this.logError('错误','获取文件信息失败:'+error,true,3500);
+                }
+                );
         },
 
 
@@ -348,6 +420,7 @@ const app = new Vue({
                     this.file.content = response.data;
                     this.file.changed = false;
                     // this.logMsg('信息','成功',true,2000);
+                    document.title = f;
                 })
                 .catch((error)=>{
                     this.logError('错误','请求文件数据时发生错误:'+error,true,3500);
@@ -373,7 +446,7 @@ const app = new Vue({
                 titleColor: titleColor,
                 bodyHtml: bodyHtml,
                 closable: closable,
-                closer: autoClose? setTimeout(()=>{this.closeLogById(idNew)},autoClose) : undefined,
+                closer: autoClose && autoClose>0? setTimeout(()=>{this.closeLogById(idNew)},autoClose) : undefined,
             };
             this.logs.push(logNew);
         },
@@ -558,6 +631,9 @@ router.afterEach((t, f) => {
     if(f.pf==undefined) f.pf=[];
     if(t.f==undefined) t.f='';
     if(f.f==undefined) f.f='';
+
+    if(typeof(t.pd)==='string') t.pd = [t.pd];
+    if(typeof(f.pf)==='string') f.pf = [f.pf];
 
     let fileChanged = false, dirChanged = false;
 

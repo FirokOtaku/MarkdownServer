@@ -197,7 +197,7 @@
 <!--              title="复制文档链接"></span> |-->
 
         <span>
-            /<span v-for="p in file.paths">{{p}}/</span><b>{{file.name}}</b> <span v-if="file.changed" title="存在未上传的改动">*</span>
+            /<span v-for="(p,index) in file.paths" @click="clickFilePath(index)" title="显示目录内容">{{p}}/</span><b @click="clickFileInfo" title="查看文件信息">{{file.name}}</b> <span v-if="file.changed" title="存在未上传的改动">*</span>
         </span>
 
 <!--        <button class="button small" @click="windowMethod='both'" title="">-->
@@ -275,8 +275,8 @@
         <div class="log-box" v-for="log in logs">
             <div style="font-size:20px;">
                 <b :style="{color: log.titleColor}">{{log.title}}</b>
-                <span class="fas fa-close"
-                      style="color:#ff3939;float:right;font-size:150%"
+                <span class="fas fa-window-close"
+                      style="color:#ff3939;float:right;font-size:150%;cursor:pointer;"
                       v-if="log.closable"
                       @click="closeLogById(log.id)"
                 ></span>

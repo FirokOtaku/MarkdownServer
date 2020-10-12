@@ -1,6 +1,7 @@
 package firok.mds.controller;
 
 import firok.mds.entity.EntityDoc;
+import firok.mds.entity.EntityDocInfo;
 import firok.mds.entity.Response;
 import firok.mds.service.LogService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -177,5 +178,42 @@ public class DocController
 			logService.info("删除文件 [",Arrays.toString(paths),",",doc.getFile(),"] ",getSuccessString(success)," | ",request.getRemoteAddr());
 		}
 	}
+
+	/**
+	 * 获取文件信息
+	 */
+	@PostMapping("/info")
+	public Response<?> info(
+			@RequestBody EntityDoc doc
+	)
+	{
+		boolean success = false;
+		String[] paths = null;
+		try
+		{
+			paths = doc.getPaths()!=null?doc.getPaths() : new String[0];
+			Path path = Paths.get(basePath, paths);
+
+			File file = new File(path.toFile(), doc.getFile());
+
+			EntityDocInfo info = new EntityDocInfo();
+			info.setLength(file.length());
+			info.setUpdateTime(file.lastModified());
+
+			success = true;
+
+			return Response.success(info);
+		}
+		catch (Exception e)
+		{
+			success = false;
+			return Response.fail(e);
+		}
+		finally
+		{
+			logService.all("读取文件信息 [",Arrays.toString(paths),",",doc.getFile(),"] ",getSuccessString(success)," | ",request.getRemoteAddr());
+		}
+	}
+
 
 }

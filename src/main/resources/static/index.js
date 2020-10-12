@@ -43,6 +43,8 @@ Vue.component('md-editor',{
 `
 })
 
+Vue.prototype.Clipboard = ClipboardJS;
+
 const router = new VueRouter({ routes: [] });
 
 // 调整marked图片渲染器
@@ -114,6 +116,8 @@ const app = new Vue({
         logs: [], // 屏幕日志列表
 
         windowMethod: 'both', // 文件树显示状态
+
+        currentURL: '', // 当前url
     },
     methods: {
         clickParentDir: function() {
@@ -128,6 +132,16 @@ const app = new Vue({
         },
         clickFile: function(file){
             this.pushPath(this.dir.paths,this.dir.paths,file);
+        },
+        clickCopyLink: function()
+        {
+            let clipboard = new this.Clipboard("#btn-copy-link");
+            clipboard.on('success', ()=>{
+                this.logMsg('信息','已复制到剪切板',true,2000)
+            });
+            clipboard.on('error', ()=>{
+                this.logError('错误','复制失败',true,3500);
+            });
         },
 
 
@@ -205,7 +219,7 @@ const app = new Vue({
         },
         deleteFile: function() // 删除当前文件
         {
-            if(this.file.name==undefined || this.file.name=='') return;
+            if(!this.isAvailableFile) return;
 
             const result = window.confirm('删除此文档?');
             if(!result) return;
@@ -230,6 +244,36 @@ const app = new Vue({
                     this.logError('错误','删除文件时发生错误:'+error,true,3500);
                 }
             )
+        },
+        saveAsFile: function()
+        {
+            if(!this.isAvailableFile) return;
+
+            let filename = window.prompt('另存为文件名');
+            if(filename==null) return;
+
+            if(!filename.endsWith('.md')||!filename.endsWith('.MD'))
+            {
+                filename = filename + '.md';
+            }
+
+            this.nPost(
+                '/api/doc/write',
+                {
+                    paths: this.file.paths,
+                    file: filename,
+                    data: this.file.content,
+                },
+                (data)=>{
+                    this.logMsg('信息','另存为成功',true,2000);
+                    this.pushPath(this.dir.paths,this.file.paths,filename);
+                    this.flushDir(this.dir.paths);
+                    this.file.changed = false;
+                },
+                (error)=>{
+                    this.logError('错误','另存为文件时发生错误:'+error,true,3500);
+                },
+            );
         },
 
         // 切换文件查看模式
@@ -417,6 +461,12 @@ const app = new Vue({
             return marked(this.file.content);
         },
 
+        isAvailableFile: function()
+        {
+            return this.file.name!=undefined && this.file.name!='';
+        },
+
+
         styleFileTree: function()
         {
             switch (this.windowMethod) {
@@ -538,9 +588,12 @@ router.afterEach((t, f) => {
 
     if(dirChanged) app.flushDir(t.pd);
     if(fileChanged) app.flushFile(t.pf,t.f);
+
+    app.currentURL = window.location.href;
 })
 
 if(typeof(app.$route.query.pd)==='string') app.$route.query.pd = [app.$route.query.pd];
 if(typeof(app.$route.query.pf)==='string') app.$route.query.pf = [app.$route.query.pf];
 app.flushPath();
+app.currentURL = window.location.href;
 

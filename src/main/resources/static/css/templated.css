@@ -1,4 +1,4 @@
-@import url(font-awesome.css);
+/*@import url(font-awesome.css);*/
 @import url("google-css-raleway.css");
 /*
 	Industrious by TEMPLATED
@@ -7,7 +7,8 @@
 */
 /* Basic */
 @-ms-viewport {
-  width: device-width; }
+  width: device-width;
+}
 body {
   -ms-overflow-style: scrollbar; }
 

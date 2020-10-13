@@ -1,48 +1,5 @@
 const {log} = console;
 
-Vue.component('md-viewer',{
-    props: ['md'],
-    computed: {
-        html: function(){
-            return marked(this.md);
-        }
-    },
-    template:
-`
-<div v-html="html"></div>
-`
-});
-Vue.component('md-editor',{
-    data: function(){
-        return {
-            md: '',
-        };
-    },
-    methods: {
-        clickCancel: function () {
-            this.$emit('click-cancel',this.md);
-        },
-        clickSave: function () {
-            this.$emit('click-save',this.md);
-        }
-    },
-    computed: {
-        html: function (){
-            return marked(this.md);
-
-        }
-    },
-    template:
-`
-<div>
-    <textarea v-model="md"></textarea>
-    <button class="button-small" @click="clickSave">Save</button>
-    <button class="button-small" @click="clickCancel">Cancel</button>
-    <div v-html="html"></div>
-</div>
-`
-})
-
 Vue.prototype.Clipboard = ClipboardJS;
 
 function getFileLengthString(length=0)
@@ -69,7 +26,7 @@ const router = new VueRouter({ routes: [] });
 // 调整marked图片渲染器
 marked.Renderer.prototype.image = (href,title,text)=>{
     // log('渲染图片');
-    if(!href.startsWith('http'))
+    if(!href.startsWith('http:') && !href.startsWith('https:'))
     {
         // log('渲染到一张非网络图片');
         // log(href);
@@ -87,7 +44,44 @@ marked.Renderer.prototype.image = (href,title,text)=>{
         href = tempUrl;
     }
     return `<img src="${href}" title="${title}" alt="${text}" style="max-width:100%">`;
-}
+};
+// 调整marked链接渲染器
+// fixme 这块大有问题
+marked.Renderer.prototype.link = (href,title,text)=>{
+    href = href ? href.trim() : '';
+    title = title ? title : '';
+    text = text ? text : '';
+
+    // if(href.startsWith('javascript:')||href.startsWith('vbscript:'))
+    // {
+    //     href = '#';
+    // }
+    // if(!href.startsWith('http:') && !href.startsWith('https:'))
+    // {
+    //     // 把需要渲染的链接拆分 // fixme 本来想手动组装url 但是组装完打开发现没法加载文档
+    //     let pathsHref = href.split(/[\\|\/]/);
+    //     let preCount = 0;
+    //     for(let i=0;i<pathsHref.length;i++)
+    //     {
+    //         let pathHref = pathsHref[i];
+    //         if(pathHref==='..') preCount ++;
+    //         else break;
+    //     }
+    //     href = window.location.protocol+'//'+window.location.host+'/static/index.html?';
+    //
+    //     for(let i=0;i<app.file.paths.length-preCount;i++)
+    //     {
+    //         href += 'pf='+app.file.paths[i]+'&';
+    //     }
+    //     for(let i=preCount;i<pathsHref.length-1;i++)
+    //     {
+    //         href += 'pf='+pathsHref[i]+'&';
+    //     }
+    //     href += 'f='+pathsHref[pathsHref.length-1];
+    // }
+
+    return `<a onclick="app.logMsg('信息','不支持链接跳转<br>原链接 : <i>${href}</i>')" title="${title}">${text}</a>`;
+};
 marked.setOptions({
     highlight: (code)=>hljs.highlightAuto(code).value,
 });
@@ -97,7 +91,7 @@ const appIndexMd =
 `
 # Markdown 文档服务器
 
-v0.6.0 by Firok
+v0.7.0 by Firok
 
 [项目GitHub地址](https://github.com/351768593/MarkdownServer)
 
@@ -137,6 +131,8 @@ const app = new Vue({
         windowMethod: 'both', // 文件树显示状态
 
         currentURL: '', // 当前url
+
+        contentMarked: '',
     },
     methods: {
         clickParentDir: function() {
@@ -421,6 +417,9 @@ const app = new Vue({
                     this.file.changed = false;
                     // this.logMsg('信息','成功',true,2000);
                     document.title = f;
+                    this.markContent();
+                    // fixme 切换文件的时候会触发一次content change然后导致延时渲染
+                    //  这次渲染是多余的 暂时不知道怎么取消 有兴趣再研究
                 })
                 .catch((error)=>{
                     this.logError('错误','请求文件数据时发生错误:'+error,true,3500);
@@ -502,7 +501,11 @@ const app = new Vue({
                     if(onError) onError(error);
                     else this.logError('错误',error,true,3500);
                 });
-        }
+        },
+
+        markContent: function(){
+            this.contentMarked = marked(this.rawContent);
+        },
     },
     computed: {
         path: function()
@@ -529,9 +532,9 @@ const app = new Vue({
             * */
             return this.file.method;
         },
-        htmlContent: function()
+        rawContent: function()
         {
-            return marked(this.file.content);
+            return this.file!=null && this.file.content!=null ? this.file.content: '';
         },
 
         isAvailableFile: function()
@@ -617,6 +620,12 @@ const app = new Vue({
                 };
             }
         }
+    },
+    watch: {
+        rawContent: _.debounce(function(oldRawContent,newRawContent)
+        {
+            this.markContent();
+        },400),
     },
 });
 

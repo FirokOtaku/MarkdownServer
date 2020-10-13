@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/templated.css" />
     <link rel="stylesheet" href="css/highlight.css">
 
+    <script src="lodash.js"></script>
     <script src="clipboard.js"></script>
     <script src="highlight.js"></script>
     <script src="qs.js"></script>
@@ -169,6 +170,8 @@
               style="color:#cc7d3c"
               title="另存为"></span> |
 
+<!--        <span class="fab fa-markdown" style="color: black"></span> |-->
+
 
         <span class="fas fa-trash-alt"
               @click="deleteFile"
@@ -266,7 +269,7 @@
             <div v-if="viewMethod !== 'edit'"
                  :style="styleFileContentViewer"
             >
-                <div v-if="file.content" v-html="htmlContent" style="width:100%;"></div>
+                <div v-if="file.content" v-html="contentMarked" style="width:100%;"></div>
             </div>
         </div>
     </div>

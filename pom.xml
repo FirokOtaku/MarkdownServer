@@ -10,7 +10,7 @@
     </parent>
     <groupId>firok</groupId>
     <artifactId>mds</artifactId>
-    <version>0.7.0</version>
+    <version>0.8.0</version>
     <name>mds</name>
     <description>Markdown doc server</description>
 

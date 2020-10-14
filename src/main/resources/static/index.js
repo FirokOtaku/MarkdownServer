@@ -91,7 +91,7 @@ const appIndexMd =
 `
 # Markdown 文档服务器
 
-v0.7.0 by Firok
+v0.8.0 by Firok
 
 [项目GitHub地址](https://github.com/351768593/MarkdownServer)
 

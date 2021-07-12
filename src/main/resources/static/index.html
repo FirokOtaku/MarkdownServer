@@ -9,14 +9,14 @@
     <link rel="stylesheet" href="css/templated.css" />
     <link rel="stylesheet" href="css/highlight.css">
 
-    <script src="lodash.js"></script>
-    <script src="clipboard.js"></script>
-    <script src="highlight.js"></script>
-    <script src="qs.js"></script>
-    <script src="axios.js"></script>
-    <script src="marked.js"></script>
-    <script src="vue.js"></script>
-    <script src="vue-router.js"></script>
+    <script src="js/lodash.js"></script>
+    <script src="js/clipboard.js"></script>
+    <script src="js/highlight.js"></script>
+    <script src="js/qs.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/marked.js"></script>
+    <script src="js/vue.js"></script>
+    <script src="js/vue-router.js"></script>
     <style>
         body
         {
@@ -79,7 +79,7 @@
         }
         #bar
         {
-            overflow: hidden;
+            /*overflow: hidden;*/
             height: 24px;
             padding-left: 8px;
         }
@@ -134,6 +134,22 @@
 
         }
 
+        .menu-group
+        {
+            display: inline-block;
+            width: 80px;
+            text-align: center;
+            height: 20px;
+        }
+        .menu-group:hover
+        {
+            position: relative;
+            top: 0;
+            height: 100px;
+            background-color: white;
+            border: 1px solid darkblue;
+        }
+
     </style>
 </head>
 <body>
@@ -141,6 +157,19 @@
 <div id="app">
 
     <div id="bar" class="usn">
+        <div class="menu-group">
+            <div>文件</div>
+            <div class="menu-panel">测试1</div>
+        </div>
+        <div class="menu-group">
+            <div>界面</div>
+            <div class="menu-panel">测试2</div>
+        </div>
+        <div class="menu-group">
+            <div>共享</div>
+            <div class="menu-panel">测试3</div>
+        </div>
+
         <span class="fa fa-sitemap"
               :style="{ color: choose(windowMethod, { both: 'red', file: 'gray' }) }"
               @click="windowMethod = choose(windowMethod,{ both: 'file', file: 'both' })"
@@ -291,5 +320,5 @@
 </div>
 
 </body>
-<script src="index.js"></script>
+<script src="js/index.js"></script>
 </html>

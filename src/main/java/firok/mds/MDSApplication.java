@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class MDSApplication
 {
-	public static final String version = "0.8.0";
+	public static final String version = "0.9.0";
 
 	public static void main(String[] args)
 	{

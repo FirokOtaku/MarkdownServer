@@ -33,7 +33,7 @@ marked.Renderer.prototype.image = (href,title,text)=>{
         // log(title);
         // log(text);
         let paths = [];
-        for(let p of href.split(/[\/|\\]/)) if(p.length>=0) paths.push(p);
+        for(let p of href.split(/[\/|\\]/)) if(p.length>=0) paths.push(p); // 添加图片自己的url
         let tempUrl = '/api/img/get?';
         for(let i=0;i<paths.length-1;i++)
         {
@@ -91,7 +91,7 @@ const appIndexMd =
 `
 # Markdown 文档服务器
 
-v0.8.0 by Firok
+v0.9.0 by Firok
 
 [项目GitHub地址](https://github.com/351768593/MarkdownServer)
 
@@ -127,6 +127,8 @@ const app = new Vue({
         }, // 文件数据
 
         logs: [], // 屏幕日志列表
+
+        menus: [],
 
         windowMethod: 'both', // 文件树显示状态
 
